@@ -11,7 +11,7 @@ extern SDL_Renderer* renderer;
     type = CellType::EMPTYCELL;
     prop = CellProp::STATIC;
     hasMoved = flammable = isIgnited = false;
-    timesMoved = 0;
+    lifeTime = 0;
     r = g = b = 0; a = 255;
     density = 0.0f;
     heat = 0;
@@ -115,6 +115,17 @@ void Cell::SetCell(CellType type_) {
         heat = 100;
 
         r = 255, g = 0, b = 0, a = 255;
+    }
+    else if(type_ == CellType::SMOKE){
+        type = type_;
+        prop = CellProp::SMOKE;
+        density = 1.0f;
+        flammable = false;
+        isIgnited = false;
+        heat = 25;
+        lifeTime = 10;
+
+        r = 59, g = 59, r = 56, a = 255;
     }
 
 }

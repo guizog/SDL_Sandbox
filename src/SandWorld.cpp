@@ -11,6 +11,13 @@ bool InBounds(int x, int y){
         return (x >= 0 && x < 50 && y >= 0 && y < 50);
 }
 
+int RNG(int min, int max){
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> dist(min,max);
+    return dist(rng);
+}
+
 SandWorld::SandWorld() {
     running = true;
     currType = CellType::WATER;
@@ -109,6 +116,8 @@ void SandWorld::MoveCell(Cell& cell, int x, int y){
     Cell temp;
     if(cell.GetType() == CellType::SOLID || cell.GetType() == CellType::EMPTYCELL)
         return;
+    if(cell.GetHeat() < 0 && cell.GetType() == CellType::FIRE)
+        cell.SetCell(CellType::EMPTYCELL);
     if(cell.GetProp() == CellProp::GAS || cell.GetProp() == CellProp::FIRE){
         MoveGas(cell, x, y);
     }
@@ -148,12 +157,8 @@ void SandWorld::MoveCellSide(Cell &cell, int x, int y) {
         left = matrix[y][x-1].GetType() == CellType::EMPTYCELL || (matrix[y][x-1].GetDensity() < cell.GetDensity());
 
 
-    std::random_device dev;
-    std::mt19937 rng(dev());
-    std::uniform_int_distribution<std::mt19937::result_type> dist(0,10);
-
     if(right && left){
-        right = dist(rng) >= 5;
+        right = RNG(0, 10) >= 5;
         left = !right;
     }
     if(right){
@@ -179,12 +184,9 @@ void SandWorld::MoveCellDiagonal(Cell &cell, int x, int y) {
     if(InBounds(x-1, y + 1))
         left = matrix[y+1][x-1].GetType() == CellType::EMPTYCELL || (matrix[y+1][x-1].GetDensity() < cell.GetDensity());
 
-    std::random_device dev;
-    std::mt19937 rng(dev());
-    std::uniform_int_distribution<std::mt19937::result_type> dist(0,10);
 
     if(right && left){
-        right = dist(rng) >= 5;
+        right = RNG(0, 10) >= 5;
         left = !right;
     }
     if(right && !(matrix[y][x+1].GetType() == CellType::SOLID && matrix[y+1][x].GetType() == CellType::SOLID)){
@@ -203,33 +205,57 @@ void SandWorld::MoveCellDiagonal(Cell &cell, int x, int y) {
 
 void SandWorld::MoveGas(Cell &cell, int x, int y) {
     Cell temp;
-
     if(cell.GetProp() == CellProp::FIRE) {
-        bool left = false, up = false, right = false;
+        cell.SetHeat(cell.GetHeat() - 25);
+        bool pos[3] {false, false, false};//left, up, right
         if(InBounds(x+1, y-1))
-            right = matrix[y-1][x+1].GetType() == CellType::EMPTYCELL || matrix[y-1][x+1].IsFlammable();
+            pos[2] = matrix[y-1][x+1].GetType() == CellType::EMPTYCELL || matrix[y-1][x+1].IsFlammable();
         if(InBounds(x-1, y-1))
-            left = matrix[y-1][x-1].GetType() == CellType::EMPTYCELL || matrix[y-1][x-1].IsFlammable();
+            pos[0] = matrix[y-1][x-1].GetType() == CellType::EMPTYCELL || matrix[y-1][x-1].IsFlammable();
         if(InBounds(x, y-1))
-            up = matrix[y-1][x].GetType() == CellType::EMPTYCELL || matrix[y-1][x].IsFlammable();
+            pos[1] = matrix[y-1][x].GetType() == CellType::EMPTYCELL || matrix[y-1][x].IsFlammable();
 
-        std::random_device dev;
-        std::mt19937 rng(dev());
-        std::uniform_int_distribution<std::mt19937::result_type> dist(0, 10);
-
-        //HORROR
-        int dice = dist(rng);
-        if(right && dice > 7){
-            left = up = false;
+        //r/programminghorror
+        unsigned int n = RNG(0, 2);
+        if(pos[n] && n == 0){
+            if(matrix[y-1][x-1].IsFlammable()){
+                matrix[y - 1][x - 1] = cell;
+                matrix[y][x].SetCell(CellType::EMPTYCELL);
+                matrix[y - 1][x - 1].hasMoved = true;
+            }
+            else {
+                temp = matrix[y - 1][x - 1];
+                matrix[y - 1][x - 1] = cell;
+                matrix[y][x] = temp;
+                matrix[y - 1][x - 1].hasMoved = true;
+            }
         }
-        else if(left && dice > 5){
-            right = up = false;
+        else if(pos[n] && n == 1){
+            if(matrix[y-1][x].IsFlammable()){
+                matrix[y - 1][x] = cell;
+                matrix[y][x] .SetCell(CellType::EMPTYCELL);
+                matrix[y - 1][x].hasMoved = true;
+            }
+            else {
+                temp = matrix[y - 1][x];
+                matrix[y - 1][x] = cell;
+                matrix[y][x] = temp;
+                matrix[y - 1][x].hasMoved = true;
+            }
         }
-        else if(up && dice > 0){
-            right = left = false;
+        else if(pos[n] && n == 2){
+            if(matrix[y-1][x+1].IsFlammable()){
+                matrix[y - 1][x + 1] = cell;
+                matrix[y][x].SetCell(CellType::EMPTYCELL);
+                matrix[y +- 1][x + 1].hasMoved = true;
+            }
+            else {
+                temp = matrix[y - 1][x + 1];
+                matrix[y - 1][x + 1] = cell;
+                matrix[y][x] = temp;
+                matrix[y + -1][x + 1].hasMoved = true;
+            }
         }
-
-
     }
 }
 

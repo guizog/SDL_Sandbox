@@ -13,7 +13,8 @@ enum class CellType{
     WATER,
     SAND,
     OIL,
-    FIRE
+    FIRE,
+    SMOKE
 };
 
 enum class CellProp{
@@ -22,7 +23,8 @@ enum class CellProp{
     MOVE_DOWN_SIDE,
     MOVE_DOWN_DIAGONAL,
     GAS,
-    FIRE
+    FIRE,
+    SMOKE
 
 };
 
@@ -33,17 +35,22 @@ public:
     ~Cell();
     void RenderCell(int x, int y);
     void SetCell(CellType type_);
-    void SetDensity(float density_);
 
     CellType GetType() { return this->type; }
     CellProp GetProp() { return this->prop; }
 
+    int GetHeat() const{ return this->heat;}
+    void SetHeat(int heat_){ this->heat = heat_;}
+
     float GetDensity() const { return this->density; }
+    void SetDensity(float density_);
+
     bool IsFlammable() const{ return this->flammable; }
     bool IsIgnited() const { return this->isIgnited; }
 
+
     bool hasMoved;
-    int timesMoved;
+    int lifeTime;
 
 private:
     CellType type;
