@@ -28,13 +28,12 @@ void InitSDL(const char *title, int xpos, int ypos, int width, int height) {
 
 int main(int argc, char* args[] ) {
     InitSDL("Falling Sand! ", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 640);
-    std::cout << "Press Q for WATER, W for sand and E for SOLID" << std::endl << std::endl;
 
     while(world->running){
         world->HandleEvents();
         world->DrawMatrix();
-        SDL_Delay(50);
         world->Step();
+        SDL_Delay(50);
     }
 
     SDL_DestroyRenderer(renderer);

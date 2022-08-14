@@ -45,7 +45,7 @@ void SandWorld::Step() {
     for(int x = 0; x < 50; x++){
         for( int y = 0; y < 50; y++){
             if(matrix[y][x].GetType() != CellType::EMPTYCELL && !matrix[y][x].hasMoved)
-                MoveCell(matrix[y][x], x, y);
+                Move(matrix[y][x], x, y);
         }
     }
 }
@@ -112,26 +112,24 @@ void SandWorld::CreateCell(SDL_MouseButtonEvent& b) {
     }
 }
 
-void SandWorld::MoveCell(Cell& cell, int x, int y){
-    Cell temp;
+void SandWorld::Move(Cell& cell, int x, int y){
     if(cell.GetType() == CellType::SOLID || cell.GetType() == CellType::EMPTYCELL)
         return;
-    if(cell.GetHeat() < 0 && cell.GetType() == CellType::FIRE)
-        cell.SetCell(CellType::EMPTYCELL);
-    if(cell.GetProp() == CellProp::GAS || cell.GetProp() == CellProp::FIRE){
-        MoveGas(cell, x, y);
+
+
+    if(cell.GetProp() == CellProp::FIRE){
+        MoveFire(cell, x, y);
     }
     else{
-        MoveCellDown(cell, x, y);
+        MoveCell(cell, x, y, 1);
     }
 
 }
 
-
-void SandWorld::MoveCellDown(Cell &cell, int x, int y) {
+void SandWorld::MoveCell(Cell &cell, int x, int y, int dir) {
     Cell temp;
-    if(InBounds(x, y+1)){
-        Cell *down = &(matrix[y+1][x]);
+    if(InBounds(x, y+dir)){
+        Cell *down = &(matrix[y+dir][x]);
         if(down->GetType() == CellType::EMPTYCELL || down->GetDensity() < cell.GetDensity()){
             temp = *down;
             *down = cell;
@@ -203,58 +201,57 @@ void SandWorld::MoveCellDiagonal(Cell &cell, int x, int y) {
     }
 }
 
-void SandWorld::MoveGas(Cell &cell, int x, int y) {
+void SandWorld::MoveFire(Cell &cell, int x, int y) {
     Cell temp;
-    if(cell.GetProp() == CellProp::FIRE) {
-        cell.SetHeat(cell.GetHeat() - 25);
-        bool pos[3] {false, false, false};//left, up, right
-        if(InBounds(x+1, y-1))
-            pos[2] = matrix[y-1][x+1].GetType() == CellType::EMPTYCELL || matrix[y-1][x+1].IsFlammable();
-        if(InBounds(x-1, y-1))
-            pos[0] = matrix[y-1][x-1].GetType() == CellType::EMPTYCELL || matrix[y-1][x-1].IsFlammable();
-        if(InBounds(x, y-1))
-            pos[1] = matrix[y-1][x].GetType() == CellType::EMPTYCELL || matrix[y-1][x].IsFlammable();
 
-        //r/programminghorror
-        unsigned int n = RNG(0, 2);
-        if(pos[n] && n == 0){
-            if(matrix[y-1][x-1].IsFlammable()){
-                matrix[y - 1][x - 1] = cell;
-                matrix[y][x].SetCell(CellType::EMPTYCELL);
-                matrix[y - 1][x - 1].hasMoved = true;
-            }
-            else {
-                temp = matrix[y - 1][x - 1];
-                matrix[y - 1][x - 1] = cell;
-                matrix[y][x] = temp;
-                matrix[y - 1][x - 1].hasMoved = true;
-            }
+    if(cell.GetHeat() < 0) {
+        cell.SetCell(CellType::EMPTYCELL);
+        return;
+    }
+
+    cell.SetHeat(cell.GetHeat() - 25);
+    bool pos[3]{false, false, false};//left, up, right
+    if (InBounds(x + 1, y - 1))
+        pos[2] = matrix[y - 1][x + 1].GetType() == CellType::EMPTYCELL || matrix[y - 1][x + 1].IsFlammable();
+    if (InBounds(x - 1, y - 1))
+        pos[0] = matrix[y - 1][x - 1].GetType() == CellType::EMPTYCELL || matrix[y - 1][x - 1].IsFlammable();
+    if (InBounds(x, y - 1))
+        pos[1] = matrix[y - 1][x].GetType() == CellType::EMPTYCELL || matrix[y - 1][x].IsFlammable();
+
+    //r/programminghorror
+    unsigned int n = RNG(0, 2);
+    if (pos[n] && n == 0) {
+        if (matrix[y - 1][x - 1].IsFlammable()) {
+            matrix[y - 1][x - 1] = cell;
+            matrix[y][x].SetCell(CellType::EMPTYCELL);
+            matrix[y - 1][x - 1].hasMoved = true;
+        } else {
+            temp = matrix[y - 1][x - 1];
+            matrix[y - 1][x - 1] = cell;
+            matrix[y][x] = temp;
+            matrix[y - 1][x - 1].hasMoved = true;
         }
-        else if(pos[n] && n == 1){
-            if(matrix[y-1][x].IsFlammable()){
-                matrix[y - 1][x] = cell;
-                matrix[y][x] .SetCell(CellType::EMPTYCELL);
-                matrix[y - 1][x].hasMoved = true;
-            }
-            else {
-                temp = matrix[y - 1][x];
-                matrix[y - 1][x] = cell;
-                matrix[y][x] = temp;
-                matrix[y - 1][x].hasMoved = true;
-            }
+    } else if (pos[n] && n == 1) {
+        if (matrix[y - 1][x].IsFlammable()) {
+            matrix[y - 1][x] = cell;
+            matrix[y][x].SetCell(CellType::EMPTYCELL);
+            matrix[y - 1][x].hasMoved = true;
+        } else {
+            temp = matrix[y - 1][x];
+            matrix[y - 1][x] = cell;
+            matrix[y][x] = temp;
+            matrix[y - 1][x].hasMoved = true;
         }
-        else if(pos[n] && n == 2){
-            if(matrix[y-1][x+1].IsFlammable()){
-                matrix[y - 1][x + 1] = cell;
-                matrix[y][x].SetCell(CellType::EMPTYCELL);
-                matrix[y +- 1][x + 1].hasMoved = true;
-            }
-            else {
-                temp = matrix[y - 1][x + 1];
-                matrix[y - 1][x + 1] = cell;
-                matrix[y][x] = temp;
-                matrix[y + -1][x + 1].hasMoved = true;
-            }
+    } else if (pos[n] && n == 2) {
+        if (matrix[y - 1][x + 1].IsFlammable()) {
+            matrix[y - 1][x + 1] = cell;
+            matrix[y][x].SetCell(CellType::EMPTYCELL);
+            matrix[y + -1][x + 1].hasMoved = true;
+        } else {
+            temp = matrix[y - 1][x + 1];
+            matrix[y - 1][x + 1] = cell;
+            matrix[y][x] = temp;
+            matrix[y + -1][x + 1].hasMoved = true;
         }
     }
 }

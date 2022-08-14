@@ -23,14 +23,14 @@ public:
     bool running;
 
 private:
-    void MoveCell(Cell& cell, int x, int y);
+    void Move(Cell& cell, int x, int y);
     void CreateCell(SDL_MouseButtonEvent& b);
     void GetKeyboard(SDL_KeyboardEvent& k);
 
-    void MoveCellDown(Cell &cell, int x, int y);
+    void MoveCell(Cell &cell, int x, int y, int dir);
     void MoveCellSide(Cell &cell, int x, int y);
     void MoveCellDiagonal(Cell &cell, int x, int y);
-    void MoveGas(Cell &cell, int x, int y);
+    void MoveFire(Cell &cell, int x, int y);
 
     CellType currType;
 };
